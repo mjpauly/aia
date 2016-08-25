@@ -17,7 +17,7 @@ from datetime import datetime
 wavelength = '304'
 mission_start_brightness = sun_intensity.get_intensity(datetime(2010,5,1), wavelength)
 today_brightness = sun_intensity.get_intensity(datetime.utcnow(), wavelength)
-dim_factor = mission_start_brightness / today brightness
+dim_factor = mission_start_brightness / today_brightness
 ```
 
 This dim factor can then be used to set the maximun and minimum limits for pixel values of an AIA image. I will upload the python version of the AIA image producing routine soon.
