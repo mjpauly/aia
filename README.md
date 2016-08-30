@@ -20,4 +20,4 @@ today_brightness = sun_intensity.get_intensity(datetime.utcnow(), wavelength)
 dim_factor = mission_start_brightness / today_brightness
 ```
 
-This dim factor can then be used to set the maximun and minimum limits for pixel values of an AIA image. `mov_img.py` contains an example image producing routine. It produces the same images that appear on the [sdowww.lmsal.com website](sdowww.lmsal.com website).
+This dim factor can then be used to set the maximun and minimum limits for pixel values of an AIA image. `mov_img.py` contains an example image producing routine. It produces the same images that appear on the [sdowww.lmsal.com](sdowww.lmsal.com) website.
