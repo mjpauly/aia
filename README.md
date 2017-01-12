@@ -7,7 +7,7 @@ The SunIntensity package's primary usage is for normalizing the brightness of AI
 
 ![304 brightness plot](304_plot.png)
 
-The sun_intensity.py module contains all the code necessary for collecting and processing the original data, however this is rather computationally expensive and will take some time. That code is here mostly to show how the values are obtained. The best way to get the normalization values is to use the get_dim_factor function in the sun_intensity.py module. I recommend cloning this repository and using `imp` to import it into your program.
+The sun_intensity.py module contains all the code necessary for collecting and processing the original data, however this is rather computationally expensive and will take some time. That code is here mostly to show how the values are obtained. The best way to get the normalization values is to use the get_dim_factor function in the sun_intensity.py module. I recommend cloning this repository and using `imp` to import the module into your program.
 
 ```python
 import imp
@@ -24,3 +24,5 @@ dim_factor = sun_intensity.get_dim_factor(date, wavelength)
 ```
 
 `mov_img.py` contains an example image producing routine that utilizes this rescaling. It produces the same images that appear on the [sdowww.lmsal.com](http://sdowww.lmsal.com) website.
+
+All the data is stored in the CSV and JSON files aia_rescaling_data.csv/.json. If you want to implement the rescaling in a program other than python, accessing the dim factors from these files is the simplest way to do it.
