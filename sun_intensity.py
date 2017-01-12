@@ -110,8 +110,7 @@ def process_wave(wave):
         paths = paths.bfill() # backwards. (if initial dates lack data)
         raw = raw.ffill()
         raw = raw.bfill()
-        sav = pd.Series(savgol_filter(raw, 301, 2), index=date_list)
-        return [wave, paths, raw, sav]
+        return [wave, paths, raw]
         """
         except:
                 with open('/Users/pauly/Desktop/{}.pkl'.format(wave), 'wb') as f:
@@ -119,7 +118,7 @@ def process_wave(wave):
         """
 
 
-def main():
+def main(compute_regression=True):
         """Gets all the sun intensities for all wavelengths.
         Uses multiprocessing.
         """
@@ -129,7 +128,9 @@ def main():
                         wave = r[0]
                         csv_dict[wave + '_paths'] = r[1]
                         csv_dict[wave + '_raw'] = r[2]
-                        csv_dict[wave + '_filtered'] = r[3]
+                        if compute_regressoin:
+                                csv_dict[wave + '_filtered'] = pd.Series(
+                                        savgol_filter(r[2], 301, 2), index=date_list)
         df = pd.DataFrame(csv_dict)
         return df
 
@@ -140,12 +141,18 @@ def update_csv():
         if os.path.exists(csv_path):
                 df = pd.read_csv(csv_path)
                 latest_date = parse_time(df.index[-1])
-                global datetime_list = create_date_series(latest_date
+                global datetime_list
+                global date_list
+                datetime_list = create_date_series(latest_date
                                                           + timedelta(days=1)
                                                           + timedelta(minutes=1))
-                global date_list = [str(date.date()) for date in datetime_list]
-                df2 = main(fname=None)
+                date_list = [str(date.date()) for date in datetime_list]
+                df2 = main(compute_regression=False)
                 df = df.append(df2)
+                for wave in wavelengths:
+                        df[wave + '_filtered'] = pd.Series(
+                                savgol_filter(df[wave + '_raw'], 301, 2),
+                                index=df.index)
         else:
                 df = main()
         return df
