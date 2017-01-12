@@ -19,6 +19,21 @@ import pandas as pd
 csv_path = os.path.join(os.path.dirname(__file__), 'aia_rescaling_data.csv')
 wavelengths = ['131','171','193','211','304','335','94']
 
+
+def create_date_series(tstart):
+        if isinstance(tstart, tuple):
+                dt = datetime(*tstart)
+        else:
+                dt = tstart
+        end = datetime.utcnow()
+        step = timedelta(days=1)
+        result = []
+        while dt < end:
+                result.append(dt)
+                dt += step
+        return result
+
+
 # create list of datetimes and date strings
 # starts at minute 1 to prevent hitting a leap second
 datetime_list = create_date_series((2010,5,1, 0, 1))
@@ -39,20 +54,6 @@ def get_disk_mask(data, r_pix):
         """
         x, y = np.meshgrid(*map(np.arange, data.shape), indexing='ij')
         return (np.sqrt((x - 2047.5)**2 + (y - 2047.5)**2) > r_pix)
-
-
-def create_date_series(tstart):
-        if isinstance(tstart, tuple):
-                dt = datetime(*tstart)
-        else:
-                dt = tstart
-        end = datetime.utcnow()
-        step = timedelta(days=1)
-        result = []
-        while dt < end:
-                result.append(dt)
-                dt += step
-        return result
 
 
 def process_med_int(fle):
