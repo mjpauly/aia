@@ -8,19 +8,21 @@ from astropy.io import fits
 from sunpy.map import Map
 from sunpy.instr.aia import aiaprep
 import numpy as np
-import imp
 import multiprocessing as mp
-import matplotlib.pyplot as plt
-from matplotlib.dates import date2num, num2date
 from scipy.signal import savgol_filter
 import os
-import pytz
-pb0r = imp.load_source('pb0r',
-                       os.path.join(os.path.dirname(__file__), 'pb0r.py'))
+import imp
+pb0r = imp.load_source('pb0r', os.path.join(os.path.dirname(__file__), 'pb0r.py'))
 import pandas as pd
 
 
-WAVELENGTHS = ['131','171','193','211','304','335','94']
+csv_path = os.path.join(os.path.dirname(__file__), 'aia_rescaling_data.csv')
+wavelengths = ['131','171','193','211','304','335','94']
+
+# create list of datetimes and date strings
+# starts at minute 1 to prevent hitting a leap second
+datetime_list = create_date_series((2010,5,1, 0, 1))
+date_list = [str(date.date()) for date in datetime_list]
 
 
 def getFitsHdr(fle):
@@ -39,54 +41,6 @@ def get_disk_mask(data, r_pix):
         return (np.sqrt((x - 2047.5)**2 + (y - 2047.5)**2) > r_pix)
 
 
-def find_nearest(array, value):
-        idx = (np.abs(array-value)).argmin()
-        return idx
-
-
-def get_dim_factors(date):
-        dim_factors = []
-        for wave in WAVELENGTHS:
-                mission_start_brightness = get_intensity(datetime(2010,5,1), wave)
-                today_brightness = get_intensity(date, wave)
-                dim_factor = mission_start_brightness / today_brightness
-                dim_factors.append(dim_factor)
-        return dict(zip(WAVELENGHTS, dim_factors))
-
-
-def roundTime(dt=None, dateDelta=timedelta(minutes=1)):
-        """Round a datetime object to a multiple of a timedelta
-        dt : datetime.datetime object, default now.
-        dateDelta : timedelta object, we round to a multiple of this, default 1 minute.
-        Author: Thierry Husson 2012 - Use it as you want but don't blame me.
-        Stijn Nevens 2014 - Changed to use only datetime objects as variables
-        """
-        roundTo = dateDelta.total_seconds()
-
-        if dt == None : dt = datetime.now()
-        seconds = (dt - dt.min).seconds
-        # // is a floor division, not a comment on following line:
-        rounding = (seconds+roundTo/2) // roundTo * roundTo
-        return dt + timedelta(0,rounding-seconds,-dt.microsecond)
-
-
-def make_csv(fname):
-        d = {}
-        for wave in WAVELENGTHS:
-                data = open_norm(wave + 'data.pkl')
-                dates = data[:,0]
-                indices = [str(roundTime(dt=date, dateDelta=timedelta(days=1)).date()) for date in dates]
-                med_int = np.array([num.item() for num in data[:,6]])
-                sav = savgol_filter(med_int, 301, 2)
-                d[wave + 'raw'] = pd.Series(med_int, index=indices)
-                d[wave + 'filtered'] = pd.Series(sav, index=indices)
-        df = pd.DataFrame(d)
-        df.to_csv(path_or_buf=fname)
-
-# -----------start of new csv-based scaling tracking--------------
-CSV_PATH = os.path.join(os.path.dirname(__file__), 'aia_rescaling_data.csv')
-
-
 def create_date_series(tstart):
         if isinstance(tstart, tuple):
                 dt = datetime(*tstart)
@@ -99,12 +53,6 @@ def create_date_series(tstart):
                 result.append(dt)
                 dt += step
         return result
-
-
-# create list of datetimes and date strings
-# starts at minute 1 to prevent hitting a leap second
-DATETIME_LIST = create_date_series((2010,5,1, 0, 1))
-DATE_LIST = [str(date.date()) for date in DATETIME_LIST]
 
 
 def process_med_int(fle):
@@ -139,9 +87,9 @@ def process_wave(wave):
         At the end, all NaNs are filled with the last known value
         Unkown values in the beginning are filled from the next known value
         """
-        paths = pd.Series(index=DATE_LIST)
-        raw = pd.Series(index=DATE_LIST)
-        for date in DATETIME_LIST:
+        paths = pd.Series(index=date_list)
+        raw = pd.Series(index=date_list)
+        for date in datetime_list:
                 fles = fetch(date, date + timedelta(minutes=1), wave)
                 missing_data = False
                 while (len(fles) == 0) or (getFitsHdr(fles[0])['quality'] != 0):
@@ -161,7 +109,7 @@ def process_wave(wave):
         paths = paths.bfill() # backwards. (if initial dates lack data)
         raw = raw.ffill()
         raw = raw.bfill()
-        sav = pd.Series(savgol_filter(raw, 301, 2), index=DATE_LIST)
+        sav = pd.Series(savgol_filter(raw, 301, 2), index=date_list)
         return [wave, paths, raw, sav]
         """
         except:
@@ -170,13 +118,13 @@ def process_wave(wave):
         """
 
 
-def updated_main():
+def main():
         """Gets all the sun intensities for all wavelengths.
         Uses multiprocessing.
         """
         csv_dict = {}
         with mp.Pool(processes=12) as pool:
-                for r in pool.imap_unordered(process_wave, WAVELENGTHS):
+                for r in pool.imap_unordered(process_wave, wavelengths):
                         wave = r[0]
                         csv_dict[wave + '_paths'] = r[1]
                         csv_dict[wave + '_raw'] = r[2]
@@ -188,15 +136,17 @@ def updated_main():
 def update_csv():
         """Updates the csv
         """
-        if os.path.exists(CSV_PATH):
-                df = pd.read_csv(CSV_PATH)
+        if os.path.exists(csv_path):
+                df = pd.read_csv(csv_path)
                 latest_date = parse_time(df.index[-1])
-                DATETIME_LIST = create_date_series(latest_date + timedelta(days=1) + timedelta(minutes=1))
-                DATE_LIST = [str(date.date()) for date in DATETIME_LIST]
-                df2 = updated_main(fname=None)
+                global datetime_list = create_date_series(latest_date
+                                                          + timedelta(days=1)
+                                                          + timedelta(minutes=1))
+                global date_list = [str(date.date()) for date in datetime_list]
+                df2 = main(fname=None)
                 df = df.append(df2)
         else:
-                df = updated_main()
+                df = main()
         return df
 
 
@@ -209,8 +159,8 @@ def get_dim_factor(date, wave):
         Datetime objects are truncated to the current day.
         wave: string denoting the wavelength (eg '171')
         """
-        df = pd.read_csv(CSV_PATH)
-        if not isinstance(date, str)
+        df = pd.read_csv(csv_path)
+        if not isinstance(date, str):
                 date = str(date.date())
         if date > df.index[-1]:
                 # Use latest known time if date ahead of csv
@@ -227,11 +177,11 @@ def get_today_factors():
         """
         factors = {}
         date = datetime.utcnow()
-        for wave in WAVELENGTHS:
+        for wave in wavelengths:
                 factors[wave] = get_dim_factor(date, wave)
         return factors
 
 
 if __name__ == '__main__':
         df = update_csv()
-        df.to_csv(CSV_PATH)
+        df.to_csv(csv_path)
