@@ -4,7 +4,6 @@
 from datetime import datetime
 import matplotlib.colors as colors
 import numpy as np
-from astropy.io import fits
 from scipy import misc
 
 import sunpy.map
@@ -15,15 +14,6 @@ from PIL import ImageFont
 from PIL import ImageDraw
 
 
-def getFitsHdr(fle):
-	"""get the header for a fits file
-	"""
-	f = fits.open(fle)
-	hdr = f[-1].header
-	f.close()
-	return hdr
-
-
 STANDARD_INT = {'131': 6.99685, '171': 4.99803, '193': 2.9995,
 		'211': 4.99801, '304': 4.99941, '335': 6.99734, '94': 4.99803}
 SQRT_NORM = {'131': False, '171': True, '193': False, '211': False,
@@ -32,12 +22,12 @@ MINMAX = {'131': (7, 1200),'171': (10, 6000),'193': (120, 6000),
 		'211': (30, 13000), '304': (50, 2000),'335': (3.5, 1000),
 		'94': (1.5, 50)}
 
-def process_img(fits_file, save=True):
-	"""produces a png image of the Sun from a fits file
-	optional kwarg save determining whether to save the image directly
+def process_img(fits_file, fname=None):
+	"""Produces a png image of the Sun from a fits file
+	Optional kwarg fname determining whether to save the image directly
 	or to return a pil image
 	"""
-	hdr = getFitsHdr(fits_file)
+	hdr = sun_intensity.getFitsHdr(fits_file)
 	wavelength = str(hdr['wavelnth'])
 	exptime = hdr['EXPTIME']
 	cmap = sunpy.cm.get_cmap('sdoaia' + wavelength)
@@ -47,9 +37,7 @@ def process_img(fits_file, save=True):
 	themap = sunpy.map.Map(fits_file)
 	data = themap.data / exptime #  normalize for exposure
 	norm_scale = STANDARD_INT[wavelength]
-	dim_factor = (sun_intensity.get_intensity(datetime(2010,5,1),
-		wavelength) / sun_intensity.get_intensity(themap.date, wavelength))
-	print('{} dim factor: {}'.format(wavelength, dim_factor))
+        dim_factor = sun_intensity.get_dim_factor(themap.date, wavelength)
 	data = data * norm_scale
 	data = np.flipud(data)
 
@@ -71,7 +59,7 @@ def process_img(fits_file, save=True):
 	draw.text((font_height, len(data) - (2 * font_height)),
 			'SDO/AIA- ' + wavelength + ' ' +
 			themap.date.strftime('%Y-%m-%d %H:%M:%S'), font=font)
-	if save:
-		pil_img.save('img.png')
+	if fname:
+		pil_img.save(fname)
 	else:
 		return pil_img
