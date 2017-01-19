@@ -194,3 +194,4 @@ if __name__ == '__main__':
         df = update_csv()
         df.to_csv(csv_path)
         df.to_json(csv_path[:-3] + 'json')
+        df.to_json(csv_path[:-4] + '2.json', orient='index')
