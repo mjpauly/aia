@@ -139,7 +139,7 @@ def update_csv():
         """Updates the csv
         """
         if os.path.exists(csv_path):
-                df = pd.read_csv(csv_path)
+                df = pd.read_csv(csv_path, index_col=0)
                 latest_date = parse_time(df.index[-1])
                 global datetime_list
                 global date_list
