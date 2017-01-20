@@ -167,7 +167,7 @@ def get_dim_factor(date, wave):
         Datetime objects are truncated to the current day.
         wave: string denoting the wavelength (eg '171')
         """
-        df = pd.read_csv(csv_path)
+        df = pd.read_csv(csv_path, index_col=0)
         if not isinstance(date, str):
                 date = str(date.date())
         if date > df.index[-1]:
@@ -176,7 +176,7 @@ def get_dim_factor(date, wave):
         if date < df.index[0]:
                 # Use first known time if date before start of csv data
                 date = df.index[0]
-        scale_factor = df.loc['2010-05-01', wave] / df.loc[date, wave]
+        scale_factor = df.loc['2010-05-01', wave + '_filtered'] / df.loc[date, wave + '_filtered']
         return scale_factor
 
 
@@ -190,8 +190,25 @@ def get_today_factors():
         return factors
 
 
+def make_movie_frames(downscale=None, rescale_brightness=True):
+        """Produces the frames for a time-series movie of AIA data
+
+        rescale: determines if brightness correction takes place
+        """
+        import mov_img
+        df = pd.read_csv(csv_path, index_col=0)
+        out_path = os.path.join(os.path.dirname(__file__), 'movies/')
+        for wave in wavelengths:
+                out_path_wave = os.path.join(out_path, wave + '/')
+                for i, img_path in enumerate(df[wave + '_paths'][::7]):
+                        mov_img.process_img(img_path,
+                                            out_path_wave + i + '.jpg',
+                                            downscale=downscale,
+                                            rescale_brightness=rescale_brightness)
+        """check over!"""
+
+
 if __name__ == '__main__':
         df = update_csv()
         df.to_csv(csv_path)
-        df.to_json(csv_path[:-3] + 'json')
-        df.to_json(csv_path[:-4] + '2.json', orient='index')
+        df.to_json(csv_path[:-3] + 'json', orient='index')
