@@ -1,6 +1,7 @@
 """Module for finding the brightness values for AIA images using the date
 """
 
+import mov_img
 from datetime import datetime, timedelta
 from fetcher import fetch
 from sunpy.time import parse_time
@@ -139,7 +140,7 @@ def update_csv():
         """Updates the csv
         """
         if os.path.exists(csv_path):
-                df = pd.read_csv(csv_path, index_col=0)
+                df = open_csv()
                 latest_date = parse_time(df.index[-1])
                 global datetime_list
                 global date_list
@@ -167,7 +168,7 @@ def get_dim_factor(date, wave):
         Datetime objects are truncated to the current day.
         wave: string denoting the wavelength (eg '171')
         """
-        df = pd.read_csv(csv_path, index_col=0)
+        df = open_csv()
         if not isinstance(date, str):
                 date = str(date.date())
         if date > df.index[-1]:
@@ -190,22 +191,30 @@ def get_today_factors():
         return factors
 
 
-def make_movie_frames(downscale=None, rescale_brightness=True):
+def make_movie_frames(downscale=(8,8), rescale_brightness=True):
         """Produces the frames for a time-series movie of AIA data
+
+        downscale: if filed, downscales the data by (x, y) factor
 
         rescale: determines if brightness correction takes place
         """
-        import mov_img
-        df = pd.read_csv(csv_path, index_col=0)
+        df = open_csv()
         out_path = os.path.join(os.path.dirname(__file__), 'movies/')
         for wave in wavelengths:
                 out_path_wave = os.path.join(out_path, wave + '/')
-                for i, img_path in enumerate(df[wave + '_paths'][::7]):
+                if not os.path.exists(out_path_wave):
+                        os.mkdir(out_path_wave)
+                for i, img_path in enumerate(df[wave + '_paths'][::30]):
                         mov_img.process_img(img_path,
-                                            out_path_wave + i + '.jpg',
+                                            out_path_wave + str(i) + '.jpg',
                                             downscale=downscale,
                                             rescale_brightness=rescale_brightness)
-        """check over!"""
+
+
+def open_csv():
+        if not os.path.exists(csv_path):
+                raise FileNotFoundError('Can not find AIA data CSV file.')
+        return pd.read_csv(csv_path, index_col=0)
 
 
 if __name__ == '__main__':
