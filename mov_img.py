@@ -8,7 +8,11 @@ from scipy import misc
 from skimage.transform import downscale_local_mean
 
 import sunpy.map
-import sun_intensity
+try:
+        import sun_intensity
+except ImportError:
+        print('''Can not import sun_intensity module.
+                Cannot do brightness rescaling.''')
 
 from PIL import Image
 from PIL import ImageFont
