@@ -191,7 +191,8 @@ def get_today_factors():
         return factors
 
 
-def make_movie_frames(downscale=(8,8), rescale_brightness=True):
+def make_movie_frames(downscale=(8,8), rescale_brightness=True,
+                      side_by_side=True):
         """Produces the frames for a time-series movie of AIA data
 
         downscale: if filed, downscales the data by (x, y) factor
@@ -204,11 +205,12 @@ def make_movie_frames(downscale=(8,8), rescale_brightness=True):
                 out_path_wave = os.path.join(out_path, wave + '/')
                 if not os.path.exists(out_path_wave):
                         os.mkdir(out_path_wave)
-                for i, img_path in enumerate(df[wave + '_paths'][::30]):
+                for i, img_path in enumerate(df[wave + '_paths'][::7]):
                         mov_img.process_img(img_path,
                                             out_path_wave + str(i) + '.jpg',
                                             downscale=downscale,
-                                            rescale_brightness=rescale_brightness)
+                                            rescale_brightness=rescale_brightness,
+                                            side_by_side=side_by_side)
 
 
 def make_gif(fname, frame_dir):

@@ -30,7 +30,8 @@ MINMAX = {'131': (7, 1200),'171': (10, 6000),'193': (120, 6000),
           '94': (1.5, 50)}
 
 def process_img(fits_file, fname=None, downscale=None,
-                rescale_brightness=True, side_by_side=False):
+                rescale_brightness=True, side_by_side=False,
+                timestamp=True):
         """Produces a png image of the Sun from a fits file
 
         Optional kwarg fname determining whether to save the image directly
@@ -77,19 +78,21 @@ def process_img(fits_file, fname=None, downscale=None,
         if side_by_side:
                 new_img = Image.new('RGB', (width * 2, height))
                 new_img.paste(pil_img, (0, 0))
-                second_image = process_img(fits_file, downscale=downscale
-                                           rescale_brightness=False)
+                second_image = process_img(fits_file, downscale=downscale,
+                                           rescale_brightness=False,
+                                           timestamp=False)
                 new_img.paste(second_image, (width, 0))
                 pil_img = new_img
 
-        draw = ImageDraw.Draw(pil_img)
-        font_height = int(height / 64)
-        font = ImageFont.truetype('/Library/Fonts/Arial.ttf', font_height)
-        draw.text((font_height, height - (2 * font_height)),
-                        'SDO/AIA- ' + wavelength + ' ' +
-                        themap.date.strftime('%Y-%m-%d %H:%M:%S'), font=font)
-        if side_by_side:
-                new
+        if timestamp:
+                draw = ImageDraw.Draw(pil_img)
+                font_height = int(height / 64)
+                font = ImageFont.truetype('/Library/Fonts/Arial.ttf',
+                                          font_height)
+                draw.text((font_height, height - (2 * font_height)),
+                                'SDO/AIA- ' + wavelength + ' ' +
+                                themap.date.strftime('%Y-%m-%d %H:%M:%S'),
+                                font=font)
 
         if fname:
                 pil_img.save(fname)
