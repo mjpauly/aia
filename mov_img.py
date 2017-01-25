@@ -8,6 +8,7 @@ from scipy import misc
 from skimage.transform import downscale_local_mean
 
 import sunpy.map
+
 try:
         import sun_intensity
 except ImportError:
