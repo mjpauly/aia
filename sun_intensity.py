@@ -211,6 +211,17 @@ def make_movie_frames(downscale=(8,8), rescale_brightness=True):
                                             rescale_brightness=rescale_brightness)
 
 
+def make_gif(fname, frame_dir):
+        """Makes a gif from a set of frames
+
+        fname: name of output file
+
+        frame_dir: dir containing frames formatted as dir/*.png
+        """
+        from subprocess import Popen
+        Popen(['convert', '-loop', '0', '-delay', '2', frame_dir, fname])
+
+
 def open_csv():
         if not os.path.exists(csv_path):
                 raise FileNotFoundError('Can not find AIA data CSV file.')
