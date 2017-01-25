@@ -30,7 +30,7 @@ MINMAX = {'131': (7, 1200),'171': (10, 6000),'193': (120, 6000),
           '94': (1.5, 50)}
 
 def process_img(fits_file, fname=None, downscale=None,
-                rescale_brightness=True):
+                rescale_brightness=True, side_by_side=False):
         """Produces a png image of the Sun from a fits file
 
         Optional kwarg fname determining whether to save the image directly
@@ -40,6 +40,9 @@ def process_img(fits_file, fname=None, downscale=None,
         E.g. (8,8)
 
         rescale: determines if brightness correction is done.
+
+        side_by_side: make a side-by-side comparison of the scaled
+        and not brightness scaled images
         """
         hdr = sun_intensity.getFitsHdr(fits_file)
         wavelength = str(hdr['wavelnth'])
@@ -57,7 +60,7 @@ def process_img(fits_file, fname=None, downscale=None,
         if downscale:
                 data = downscale_local_mean(data, downscale)
 
-        if rescale_brightness:
+        if rescale_brightness or side_by_side:
                 imin = imin / dim_factor # brightness correction
                 imax = imax / dim_factor
         data[0,0] = imin # first pixel set to min
@@ -70,12 +73,24 @@ def process_img(fits_file, fname=None, downscale=None,
                 norm = colors.LogNorm(vmin=imin, vmax=imax, clip=True)
         pil_img = misc.toimage(cmap(norm(data)))
 
+        width, height = pil_img.size
+        if side_by_side:
+                new_img = Image.new('RGB', (width * 2, height))
+                new_img.paste(pil_img, (0, 0))
+                second_image = process_img(fits_file, downscale=downscale
+                                           rescale_brightness=False)
+                new_img.paste(second_image, (width, 0))
+                pil_img = new_img
+
         draw = ImageDraw.Draw(pil_img)
-        font_height = int(len(data) / 64)
+        font_height = int(height / 64)
         font = ImageFont.truetype('/Library/Fonts/Arial.ttf', font_height)
-        draw.text((font_height, len(data) - (2 * font_height)),
+        draw.text((font_height, height - (2 * font_height)),
                         'SDO/AIA- ' + wavelength + ' ' +
                         themap.date.strftime('%Y-%m-%d %H:%M:%S'), font=font)
+        if side_by_side:
+                new
+
         if fname:
                 pil_img.save(fname)
         else:
