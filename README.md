@@ -5,7 +5,7 @@
 The SunIntensity package's primary usage is for normalizing the brightness of AIA images so that they are at the standard brightness from the beginning of the mission. The 304 AA images from AIA have been the most greatly affected by changes in brightness, decreasing to less than a twelfth of their original brightness at the beginning of the mission.
 
 <center>
-![304 brightness plot](304_plot.png)
+![304 brightness plot](304_plot.jpg)
 </center>
 
 The sun_intensity.py module contains all the code necessary for collecting and processing the original data, however this is rather computationally expensive and will take some time. That code is here mostly to show how the values are obtained. The best way to get the normalization values is to use the get_dim_factor function in the sun_intensity.py module. I recommend cloning this repository and using `imp` to import the module into your program.
