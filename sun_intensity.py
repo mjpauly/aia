@@ -202,6 +202,8 @@ def make_movie_frames(downscale=(8,8), rescale_brightness=True,
         """
         df = open_csv()
         out_path = os.path.join(os.path.dirname(__file__), 'movies/')
+        if not os.path.exists(out_path):
+                os.mkdir(out_path)
         for wave in wavelengths:
                 out_path_wave = os.path.join(out_path, wave + '/')
                 if not os.path.exists(out_path_wave):
@@ -214,24 +216,38 @@ def make_movie_frames(downscale=(8,8), rescale_brightness=True,
                                             side_by_side=side_by_side)
 
 
-def make_gif(fname, frame_dir):
+def make_animation(fname, frame_dir):
         """Makes a gif from a set of frames
 
         fname: name of output file
 
         frame_dir: dir containing frames formatted as dir/*.png
+
+        gif or movie format determined from fname
         """
         from subprocess import Popen
-        Popen(['convert', '-loop', '1', '-delay', '2', '-dispose', 'previous',
-               frame_dir, fname])
+        if fname[-4:] == '.gif':
+                Popen(['convert', '-loop', '1', '-delay', '2', '-dispose', 'previous',
+                       frame_dir, fname])
+        else:
+                Popen(['~/ffmpeg', '-y', '-i', frame_dir, '-filter:v',
+                       '"setpts=1.0*PTS"', '-c:v', 'libx264', '-crf', '15',
+                       '-pix_fmt', 'yuv420p', fname])
 
 
-def make_all_gifs():
+def make_all_animations(gif=False):
         """Makes all the gifs
+
+        gif: output a gif or movie if False
         """
-        for wave in wavelengths:
-                sun_intensity.make_gif('movies/{}.gif'.format(wave),
+        if gif:
+                for wave in wavelengths:
+                        make_animation('movies/{}.gif'.format(wave),
                                        'movies/{}/*'.format(wave))
+        else:
+                for wave in wavelengths:
+                        make_animation('movies/{}.mov'.format(wave),
+                                       '\'movies/{}/{}.png\''.format(wave, '%03d')
 
 
 def open_csv():
@@ -243,7 +259,7 @@ def open_csv():
 if __name__ == '__main__':
         df = update_csv()
         df.to_csv(csv_path)
-        # remove unnecessary columns for json file
+        # remove unnecessary columns for json file creation
         drop_columns = [x for x in df.columns if 'raw' in x]
         drop_columns.extend([x for x in df.columns if 'paths' in x])
         df.drop(drop_columns, inplace=True, axis=1)
