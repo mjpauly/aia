@@ -247,7 +247,7 @@ def make_all_animations(gif=False):
         else:
                 for wave in wavelengths:
                         make_animation('movies/{}.mov'.format(wave),
-                                       '\'movies/{}/{}.jpg\''.format(wave, '%03d')
+                                       '\'movies/{}/{}.jpg\''.format(wave, '%03d'))
 
 
 def open_csv():
