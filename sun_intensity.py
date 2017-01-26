@@ -177,7 +177,8 @@ def get_dim_factor(date, wave):
         if date < df.index[0]:
                 # Use first known time if date before start of csv data
                 date = df.index[0]
-        scale_factor = df.loc['2010-05-01', wave + '_filtered'] / df.loc[date, wave + '_filtered']
+        scale_factor = (df.loc['2010-05-01', wave + '_filtered']
+                        / df.loc[date, wave + '_filtered'])
         return scale_factor
 
 
@@ -192,7 +193,7 @@ def get_today_factors():
 
 
 def make_movie_frames(downscale=(8,8), rescale_brightness=True,
-                      side_by_side=True):
+                      side_by_side=True, sampling_rate=7):
         """Produces the frames for a time-series movie of AIA data
 
         downscale: if filed, downscales the data by (x, y) factor
@@ -205,9 +206,9 @@ def make_movie_frames(downscale=(8,8), rescale_brightness=True,
                 out_path_wave = os.path.join(out_path, wave + '/')
                 if not os.path.exists(out_path_wave):
                         os.mkdir(out_path_wave)
-                for i, img_path in enumerate(df[wave + '_paths'][::7]):
+                for i, img_path in enumerate(df[wave + '_paths'][::sampling_rate]):
                         mov_img.process_img(img_path,
-                                            out_path_wave + str(i) + '.jpg',
+                                            '{}{:03d}.jpg'.format(out_path_wave, i),
                                             downscale=downscale,
                                             rescale_brightness=rescale_brightness,
                                             side_by_side=side_by_side)
@@ -221,7 +222,16 @@ def make_gif(fname, frame_dir):
         frame_dir: dir containing frames formatted as dir/*.png
         """
         from subprocess import Popen
-        Popen(['convert', '-loop', '0', '-delay', '2', frame_dir, fname])
+        Popen(['convert', '-loop', '1', '-delay', '2', '-dispose', 'previous',
+               frame_dir, fname])
+
+
+def make_all_gifs():
+        """Makes all the gifs
+        """
+        for wave in wavelengths:
+                sun_intensity.make_gif('movies/{}.gif'.format(wave),
+                                       'movies/{}/*'.format(wave))
 
 
 def open_csv():
@@ -233,4 +243,9 @@ def open_csv():
 if __name__ == '__main__':
         df = update_csv()
         df.to_csv(csv_path)
-        df.to_json(csv_path[:-3] + 'json', orient='index')
+        # remove unnecessary columns for json file
+        drop_columns = [x for x in df.columns if 'raw' in x]
+        drop_columns2 = [x for x in df.columns if 'paths' in x]
+        drop_columns.extend(drop_columns2)
+        df.drop(drop_columns, inplace=True, axis=1)
+        df.to_json('{}json'.format(csv_path[:-3]), orient='index')
