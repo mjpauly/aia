@@ -245,7 +245,6 @@ if __name__ == '__main__':
         df.to_csv(csv_path)
         # remove unnecessary columns for json file
         drop_columns = [x for x in df.columns if 'raw' in x]
-        drop_columns2 = [x for x in df.columns if 'paths' in x]
-        drop_columns.extend(drop_columns2)
+        drop_columns.extend([x for x in df.columns if 'paths' in x])
         df.drop(drop_columns, inplace=True, axis=1)
         df.to_json('{}json'.format(csv_path[:-3]), orient='index')
