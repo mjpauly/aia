@@ -12,7 +12,7 @@ import sunpy.map
 try:
         import sun_intensity
 except ImportError:
-        print('''Can not import sun_intensity module.
+        print('''Cannot import sun_intensity module.
                 Cannot do brightness rescaling.''')
 
 from PIL import Image
@@ -90,9 +90,9 @@ def process_img(fits_file, fname=None, downscale=None,
                 font = ImageFont.truetype('/Library/Fonts/Arial.ttf',
                                           font_height)
                 draw.text((font_height, height - (2 * font_height)),
-                                'SDO/AIA- ' + wavelength + ' ' +
-                                themap.date.strftime('%Y-%m-%d %H:%M:%S'),
-                                font=font)
+                          'SDO/AIA- ' + wavelength + ' ' +
+                          themap.date.strftime('%Y-%m-%d %H:%M:%S'),
+                          font=font)
 
         if fname:
                 pil_img.save(fname)
