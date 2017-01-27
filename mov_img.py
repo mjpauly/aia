@@ -34,16 +34,20 @@ def process_img(fits_file, fname=None, downscale=None,
                 timestamp=True):
         """Produces a png image of the Sun from a fits file
 
-        Optional kwarg fname determining whether to save the image directly
+        fits_file: name of fits file to process
+
+        fname: determines whether to save the image directly
         or to return a pil image
 
         downscale: if filled, it downscales the data by (x, y) factor.
         E.g. (8,8)
 
-        rescale: determines if brightness correction is done.
+        rescale_brightness: determines if brightness correction is done.
 
         side_by_side: make a side-by-side comparison of the scaled
         and not brightness scaled images
+
+        timestamp: show timestamp or not
         """
         hdr = sun_intensity.getFitsHdr(fits_file)
         wavelength = str(hdr['wavelnth'])
