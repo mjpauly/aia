@@ -145,8 +145,7 @@ def update_csv():
                 global datetime_list
                 global date_list
                 datetime_list = create_date_series(latest_date
-                                                          + timedelta(days=1)
-                                                          + timedelta(minutes=1))
+                                                   + timedelta(days=1, minutes=1))
                 date_list = [str(date.date()) for date in datetime_list]
                 df2 = main(compute_regression=False)
                 df = df.append(df2)
@@ -230,7 +229,8 @@ def make_animation(fname, frame_dir):
                 Popen(['convert', '-loop', '1', '-delay', '2', '-dispose', 'previous',
                        frame_dir, fname])
         else:
-                Popen(['~/ffmpeg', '-y', '-i', frame_dir, '-filter:v',
+                # currently buggy
+                Popen(['/Users/pauly/ffmpeg', '-y', '-i', frame_dir, '-filter:v',
                        '"setpts=1.0*PTS"', '-c:v', 'libx264', '-crf', '15',
                        '-pix_fmt', 'yuv420p', fname])
 
