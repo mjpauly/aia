@@ -129,7 +129,7 @@ def main(compute_regression=True):
                         wave = r[0]
                         csv_dict[wave + '_paths'] = r[1]
                         csv_dict[wave + '_raw'] = r[2]
-                        if compute_regressoin:
+                        if compute_regression:
                                 csv_dict[wave + '_filtered'] = pd.Series(
                                         savgol_filter(r[2], 301, 2), index=date_list)
         df = pd.DataFrame(csv_dict)
@@ -264,3 +264,4 @@ if __name__ == '__main__':
         drop_columns.extend([x for x in df.columns if 'paths' in x])
         df.drop(drop_columns, inplace=True, axis=1)
         df.to_json('{}json'.format(csv_path[:-3]), orient='index')
+        print('{} Regressions updated.'.format(datetime.utcnow().date()))
