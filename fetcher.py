@@ -23,7 +23,7 @@ def fetch(start_str, end, channel_str, td=12, ds='aia.lev1_euv_12s',
         if debug:
                 print(url)
         resp = requests.get(url)
-        return resp.text.split('\n')[0:-1]
+        return resp.text.split('\n')[:-1]
 
 if __name__ == '__main__':
         fetch('2016-02-20T13:00:00','2016-02-20T13:01:00','304,211')
