@@ -7,7 +7,9 @@ import numpy as np
 from scipy import misc
 from skimage.transform import downscale_local_mean
 
-import sunpy.map
+from sunpy.map import Map
+from sunpy.cm import get_cmap
+from sunpy.instr.aia import aiaprep
 
 try:
         import sun_intensity
@@ -52,11 +54,14 @@ def process_img(fits_file, fname=None, downscale=None,
         hdr = sun_intensity.getFitsHdr(fits_file)
         wavelength = str(hdr['wavelnth'])
         exptime = hdr['EXPTIME']
-        cmap = sunpy.cm.get_cmap('sdoaia' + wavelength)
+        cmap = get_cmap('sdoaia' + wavelength)
         cmap.set_bad()
         imin, imax = MINMAX[wavelength]
 
-        themap = sunpy.map.Map(fits_file)
+        themap = Map(fits_file)
+        if hdr['lvl_num'] != 1.5:
+                # perform aiaprep if data not at level 1.5
+                themap = aiaprep(themap)
         data = themap.data / exptime #  normalize for exposure
         norm_scale = STANDARD_INT[wavelength]
         dim_factor = sun_intensity.get_dim_factor(themap.date, wavelength)
