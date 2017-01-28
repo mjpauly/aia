@@ -1,5 +1,7 @@
 # AIA
 
+The purpose of this exercise is to produce aesthetically pleasing mission long movies of AIA images. The results here are not a measuremet of the degredation of the instuments because solar variability is not taken into account.
+
 ## Sun Intensity
 
 The SunIntensity package's primary usage is for normalizing the brightness of AIA images so that they are at the standard brightness from the beginning of the mission. The 304 AA images from AIA have been the most greatly affected by changes in brightness, decreasing to less than a twelfth of their original brightness at the beginning of the mission.
