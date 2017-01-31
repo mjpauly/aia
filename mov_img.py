@@ -6,6 +6,9 @@ import matplotlib.colors as colors
 import numpy as np
 from scipy import misc
 from skimage.transform import downscale_local_mean
+import os
+from subprocess import Popen
+from shutil import rmtree
 
 from sunpy.map import Map
 from sunpy.cm import get_cmap
@@ -107,3 +110,20 @@ def process_img(fits_file, fname=None, downscale=None,
                 pil_img.save(fname)
         else:
                 return pil_img
+
+
+def make_movie(fits_list, movname='outfile.mov', framerate=60, **kwargs):
+        """Produces a movie from the list of fits files provided
+        **kwargs pases args for each frame to mov_img
+        """
+        if not os.path.exists('/tmp/'):
+                os.mkdir('/tmp/')
+        if not os.path.exists('/tmp/aia_movie/'):
+                os.mkdir('/tmp/aia_movie/')
+        for i, fits_file in enumerate(fits_list):
+                process_img(fits_file,
+                            fname='/tmp/aia_movie/{:05d}.jpg'.format(i),
+                            **kwargs)
+        Popen(['ffmpeg', '-y', '-framerate', str(framerate), '-i',
+               '/tmp/aia_movie/%05d.jpg', movname])
+        rmtree('/tmp/aia_movie/')
