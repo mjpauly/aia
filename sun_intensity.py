@@ -191,68 +191,27 @@ def get_today_factors():
         return factors
 
 
-def make_movie_frames(downscale=(8,8), rescale_brightness=True,
-                      side_by_side=True, sampling_rate=7):
-        """Produces the frames for a time-series movie of AIA data
+def make_movies(out_dir='movies/'):
+        """Uses mov_img to make a 5-second, 60-fps video of each channels's
+        brightness throughout the mission with comparison between corrected
+        and uncorrected images.
 
-        downscale: if filed, downscales the data by (x, y) factor
-
-        rescale: determines if brightness correction takes place
         """
         df = open_csv()
-        out_path = os.path.join(os.path.dirname(__file__), 'movies/')
-        if not os.path.exists(out_path):
-                os.mkdir(out_path)
+        if not os.path.exists(out_dir):
+                os.mkdir(out_dir)
         for wave in wavelengths:
-                out_path_wave = os.path.join(out_path, wave + '/')
-                if not os.path.exists(out_path_wave):
-                        os.mkdir(out_path_wave)
-                for i, img_path in enumerate(df[wave + '_paths'][::sampling_rate]):
-                        mov_img.process_img(img_path,
-                                            '{}{:03d}.jpg'.format(out_path_wave, i),
-                                            downscale=downscale,
-                                            rescale_brightness=rescale_brightness,
-                                            side_by_side=side_by_side)
-
-
-def make_animation(fname, frame_dir):
-        """Makes a gif from a set of frames
-
-        fname: name of output file
-
-        frame_dir: dir containing frames formatted as dir/*.png
-
-        gif or movie format determined from fname
-        """
-        from subprocess import Popen
-        if fname[-4:] == '.gif':
-                Popen(['convert', '-loop', '1', '-delay', '2', '-dispose', 'previous',
-                       frame_dir, fname])
-        else:
-                # currently buggy
-                Popen(['/Users/pauly/ffmpeg', '-y', '-i', frame_dir, '-filter:v',
-                       '"setpts=1.0*PTS"', '-c:v', 'libx264', '-crf', '15',
-                       '-pix_fmt', 'yuv420p', fname])
-
-
-def make_all_animations(gif=False):
-        """Makes all the gifs
-
-        gif: output a gif or movie if False
-        """
-        if gif:
-                for wave in wavelengths:
-                        make_animation('movies/{}.gif'.format(wave),
-                                       'movies/{}/*'.format(wave))
-        else:
-                for wave in wavelengths:
-                        make_animation('movies/{}.mov'.format(wave),
-                                       '\'movies/{}/{}.jpg\''.format(wave, '%03d'))
+                movname = out_dir + wave + '.mov'
+                fits_list = df[wave + '_paths']
+                decimate_factor = int(np.round(len(fits_list)/300))
+                fits_list = fits_list[::decimate_factor]
+                mov_img.make_movie(fits_list, movname=movname,
+                                   downscale=(8,8), side_by_side=True)
 
 
 def open_csv():
         if not os.path.exists(csv_path):
-                raise FileNotFoundError('Can not find AIA data CSV file.')
+                raise FileNotFoundError('Cannot find AIA data CSV file.')
         return pd.read_csv(csv_path, index_col=0)
 
 
