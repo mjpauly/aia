@@ -4,7 +4,7 @@ The purpose of this exercise is to produce aesthetically pleasing mission long m
 
 ## Sun Intensity
 
-The SunIntensity package's primary usage is for normalizing the brightness of AIA images so that they are at the standard brightness from the beginning of the mission. The 304 AA images from AIA have been the most greatly affected by changes in brightness, decreasing to less than a twelfth of their original brightness at the beginning of the mission.
+The SunIntensity package normalizes the brightness of AIA images so that they are at the standard brightness from the beginning of the mission. The 304 AA images from AIA have been the most greatly affected by changes in brightness, decreasing to less than a twelfth of their original brightness at the beginning of the mission.
 
 <center>
 ![304 brightness plot](304_plot.jpg)

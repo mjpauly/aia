@@ -205,8 +205,8 @@ def make_movies(out_dir='movies/'):
                 fits_list = df[wave + '_paths']
                 decimate_factor = int(np.round(len(fits_list)/300))
                 fits_list = fits_list[::decimate_factor]
-                mov_img.make_movie(fits_list, movname=movname,
-                                   downscale=(8,8), side_by_side=True)
+                mov_img.make_movie(fits_list, movname=movname, framerate=30,
+                                   downscale=(32,32), side_by_side=True)
 
 
 def open_csv():
