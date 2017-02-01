@@ -62,9 +62,11 @@ def process_img(fits_file, fname=None, downscale=None,
         imin, imax = MINMAX[wavelength]
 
         themap = Map(fits_file)
+        '''
         if hdr['lvl_num'] != 1.5:
                 # perform aiaprep if data not at level 1.5
                 themap = aiaprep(themap)
+        '''
         data = themap.data / exptime #  normalize for exposure
         norm_scale = STANDARD_INT[wavelength]
         dim_factor = sun_intensity.get_dim_factor(themap.date, wavelength)
@@ -124,6 +126,14 @@ def make_movie(fits_list, movname='outfile.mov', framerate=60, **kwargs):
                 process_img(fits_file,
                             fname='/tmp/aia_movie/{:05d}.jpg'.format(i),
                             **kwargs)
-        Popen(['ffmpeg', '-y', '-framerate', str(framerate), '-i',
-               '/tmp/aia_movie/%05d.jpg', movname])
+        pop = Popen(['ffmpeg', '-y', '-framerate', str(framerate), '-i',
+                     '/tmp/aia_movie/%05d.jpg', movname])
+        pop.wait()
         rmtree('/tmp/aia_movie/')
+
+
+def test():
+        popobj = Pop3n(['ffmpeg', '-y', '-framerate', '60', '-i',
+                        '/tmp/aia_movie/%05d.jpg', 'test.mov'])
+        popobj.wait()
+        print('SOMETHING THAT HAPPENS TOO SOON')
