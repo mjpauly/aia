@@ -203,7 +203,7 @@ def make_movies(out_dir='movies/'):
         for wave in wavelengths:
                 movname = out_dir + wave + '.mov'
                 fits_list = df[wave + '_paths']
-                decimate_factor = int(np.round(len(fits_list)/300))
+                decimate_factor = int(np.round(len(fits_list)/150))
                 fits_list = fits_list[::decimate_factor]
                 mov_img.make_movie(fits_list, movname=movname, framerate=30,
                                    downscale=(32,32), side_by_side=True)
