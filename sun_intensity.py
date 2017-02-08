@@ -141,6 +141,8 @@ def update_csv():
         """
         if os.path.exists(csv_path):
                 df = open_csv()
+                # drop values that were unknown and carried forward at end
+                df = df.drop(df.index[-10:])
                 latest_date = parse_time(df.index[-1])
                 global datetime_list
                 global date_list
