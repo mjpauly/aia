@@ -7,6 +7,7 @@ from fetcher import fetch
 from astropy.io import fits
 from sunpy.map import Map
 from sunpy.instr.aia import aiaprep
+from sunpy.time import parse_time
 import numpy as np
 import multiprocessing as mp
 from scipy.signal import savgol_filter
@@ -14,9 +15,11 @@ import os
 import imp
 pb0r = imp.load_source('pb0r', os.path.join(os.path.dirname(__file__), 'pb0r.py'))
 import pandas as pd
+from subprocess import Popen
 
 
 csv_path = os.path.join(os.path.dirname(__file__), 'aia_rescaling_data.csv')
+json_path = '{}json'.format(csv_path[:-3])
 wavelengths = ['131','171','193','211','304','335','94']
 
 
@@ -142,7 +145,7 @@ def update_csv():
                 df = open_csv()
                 # drop values that were unknown and carried forward at end
                 df = df.drop(df.index[-10:])
-                latest_date = datetime.strptime(df.index[-1], '%m/%d/%y')
+                latest_date = parse_time(df.index[-1])
                 global datetime_list
                 global date_list
                 datetime_list = create_date_series(latest_date
@@ -223,5 +226,9 @@ if __name__ == '__main__':
         drop_columns = [x for x in df.columns if 'raw' in x]
         drop_columns.extend([x for x in df.columns if 'paths' in x])
         df.drop(drop_columns, inplace=True, axis=1)
-        df.to_json('{}json'.format(csv_path[:-3]), orient='index')
+        df.to_json(json_path, orient='index')
+        Popen(['git', 'add', csv_path])
+        Popen(['git', 'add', json_path])
+        Popen(['git', 'commit', '-m', "'Updated regressions.'"])
+        Popen(['git', 'push'])
         print('{} Regressions updated.'.format(datetime.utcnow().date()))
