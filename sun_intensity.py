@@ -4,7 +4,6 @@
 import mov_img
 from datetime import datetime, timedelta
 from fetcher import fetch
-from sunpy.time import parse_time
 from astropy.io import fits
 from sunpy.map import Map
 from sunpy.instr.aia import aiaprep
@@ -143,7 +142,7 @@ def update_csv():
                 df = open_csv()
                 # drop values that were unknown and carried forward at end
                 df = df.drop(df.index[-10:])
-                latest_date = parse_time(df.index[-1])
+                latest_date = datetime.strptime(df.index[-1], '%m/%d/%y')
                 global datetime_list
                 global date_list
                 datetime_list = create_date_series(latest_date
