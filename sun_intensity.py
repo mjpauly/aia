@@ -102,7 +102,7 @@ def process_wave(wave):
                         if date.hour >= 6:
                                 missing_data = True
                                 break
-                print(date)
+                # print(date)
                 if not missing_data:
                         index = [str(date.date())]
                         fle = fles[0]
