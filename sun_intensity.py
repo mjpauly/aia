@@ -13,7 +13,6 @@ import multiprocessing as mp
 from scipy.signal import savgol_filter
 import os
 import imp
-pb0r = imp.load_source('pb0r', os.path.join(os.path.dirname(__file__), 'pb0r.py'))
 import pandas as pd
 from subprocess import Popen
 
@@ -68,11 +67,10 @@ def process_med_int(fle):
         data = amap.data
 
         date = amap.date
-        radius = pb0r.pb0r(date, arcsec=True)['sd'].value
         hdr = getFitsHdr(fle)
         exp_time = hdr['exptime']
 
-        r_pix = radius / 0.6 # radius of sun in pixels
+        r_pix = hdr['rsun_obs'] / hdr['cdelt1'] # radius of the sun in pixels
         disk_mask = get_disk_mask(data, r_pix)
         disk_data = np.ma.array(data, mask=disk_mask)
         med_int = np.ma.median(disk_data) # np.median doesn't support masking
