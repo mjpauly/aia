@@ -51,12 +51,12 @@ def getFitsHdr(fle):
         return hdr
 
 
-def get_disk_mask(data, r_pix):
+def get_disk_mask(data_shape, r_pix):
         """returns the array mask for only the disk of the Sun
         """
         # x, y = np.meshgrid(*map(np.arange, data.shape), indexing='ij')
         # return (np.sqrt((x - 2047.5)**2 + (y - 2047.5)**2) > r_pix)
-        nrows, ncols = data.shape
+        nrows, ncols = data_shape
         row, col = np.ogrid[:nrows, :ncols]
         cnt_row, cnt_col = (nrows - 1) / 2, (ncols - 1) / 2
         disk_mask = ((row - cnt_row)**2 + (col - cnt_col)**2 > r_pix**2)
@@ -76,7 +76,7 @@ def process_med_int(fle):
         exp_time = hdr['exptime']
 
         r_pix = hdr['rsun_obs'] / hdr['cdelt1'] # radius of the sun in pixels
-        disk_mask = get_disk_mask(data, r_pix)
+        disk_mask = get_disk_mask(data.shape, r_pix)
         disk_data = np.ma.array(data, mask=disk_mask)
         med_int = np.ma.median(disk_data) # np.median doesn't support masking
         
