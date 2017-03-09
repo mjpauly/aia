@@ -123,23 +123,20 @@ def process_hmi(fits_file, rsun_obs, cdelt, fname=None,
         timestamp: show timestamp or not
         """
         hdr = sun_intensity.getFitsHdr(fits_file)
-        # cmap = get_cmap('hmimag')
-        # cmap.set_bad()
         themap = Map(fits_file)
         data = themap.data
         data = np.flipud(data)
-        r_pix = (rsun_obs / cdelt) - 10 # -10 for testing
-        import ipdb
-        ipdb.set_trace()
+        r_pix = rsun_obs / cdelt
         mask = sun_intensity.get_disk_mask(data.shape, r_pix)
-        data[mask] = 0
+        data[mask] = 0 # off disk pixel value. can be different
         if downscale:
                 data = downscale_local_mean(data, downscale)
 
-        norm = colors.LogNorm(1)
-        cmap = mpl_cmap('Greys_r')
+        norm = colors.LogNorm(1) # what norm to try?
+        cmap = get_cmap('hmimag') # can try Greys or Greys_r
+        # cmap.set_bad()
         pil_img = misc.toimage(cmap(norm(data)))
-        #pil_img = misc.toimage(cmap(data))
+        # pil_img = misc.toimage(cmap(data))
         
 
         width, height = pil_img.size
