@@ -9,16 +9,12 @@ from skimage.transform import downscale_local_mean
 import os
 from subprocess import Popen
 from shutil import rmtree
+from matplotlib.cm import get_cmap
 
 from sunpy.map import Map
-from sunpy.cm import get_cmap
 from sunpy.instr.aia import aiaprep
 
-try:
-        import sun_intensity
-except ImportError:
-        print('''Cannot import sun_intensity module.
-                Cannot do brightness rescaling.''')
+import sun_intensity
 
 from PIL import Image
 from PIL import ImageFont
@@ -103,6 +99,57 @@ def process_img(fits_file, fname=None, downscale=None,
                                           font_height)
                 draw.text((font_height, height - (2 * font_height)),
                           'SDO/AIA- ' + wavelength + ' ' +
+                          themap.date.strftime('%Y-%m-%d %H:%M:%S'),
+                          font=font)
+
+        if fname:
+                pil_img.save(fname)
+        else:
+                return pil_img
+
+
+def process_hmi(fits_file, rsun_obs, cdelt, fname=None,
+                downscale=None, timestamp=True):
+        """Produces a png image of the Sun from a fits file
+
+        fits_file: name of fits file to process
+
+        fname: determines whether to save the image directly
+        or to return a pil image
+
+        downscale: if filled, it downscales the data by (x, y) factor.
+        E.g. (8,8)
+
+        timestamp: show timestamp or not
+        """
+        hdr = sun_intensity.getFitsHdr(fits_file)
+        # cmap = get_cmap('hmimag')
+        # cmap.set_bad()
+        themap = Map(fits_file)
+        data = themap.data
+        data = np.flipud(data)
+        r_pix = (rsun_obs / cdelt) - 10 # -10 for testing
+        import ipdb
+        ipdb.set_trace()
+        mask = sun_intensity.get_disk_mask(data.shape, r_pix)
+        data[mask] = 0
+        if downscale:
+                data = downscale_local_mean(data, downscale)
+
+        norm = colors.LogNorm(1)
+        cmap = mpl_cmap('Greys_r')
+        pil_img = misc.toimage(cmap(norm(data)))
+        #pil_img = misc.toimage(cmap(data))
+        
+
+        width, height = pil_img.size
+        if timestamp:
+                draw = ImageDraw.Draw(pil_img)
+                font_height = int(height / 64)
+                font = ImageFont.truetype('/Library/Fonts/Arial.ttf',
+                                          font_height)
+                draw.text((font_height, height - (2 * font_height)),
+                          'SDO/HMI- Magnetogram' +
                           themap.date.strftime('%Y-%m-%d %H:%M:%S'),
                           font=font)
 
