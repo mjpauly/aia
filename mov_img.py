@@ -109,7 +109,7 @@ def process_img(fits_file, fname=None, downscale=None,
 
 
 def process_hmi(fits_file, rsun_obs, cdelt, fname=None,
-                downscale=None, timestamp=True):
+                downscale=None, timestamp=True, cmap='PiYG'):
         """Produces a png image of the Sun from a fits file
 
         fits_file: name of fits file to process
@@ -126,18 +126,17 @@ def process_hmi(fits_file, rsun_obs, cdelt, fname=None,
         themap = Map(fits_file)
         data = themap.data
         data = np.flipud(data)
-        r_pix = rsun_obs / cdelt
+        r_pix = (rsun_obs / cdelt) - 10
         mask = sun_intensity.get_disk_mask(data.shape, r_pix)
         data[mask] = 0 # off disk pixel value. can be different
         if downscale:
                 data = downscale_local_mean(data, downscale)
 
-        norm = colors.LogNorm(1) # what norm to try?
-        cmap = get_cmap('hmimag') # can try Greys or Greys_r
+        norm = colors.SymLogNorm(1, clip=True) # what norm to try?
+        # cmap = get_cmap('hmimag') # can try Greys or Greys_r
+        cmap = get_cmap(cmap) # can try Greys or Greys_r
         # cmap.set_bad()
         pil_img = misc.toimage(cmap(norm(data)))
-        # pil_img = misc.toimage(cmap(data))
-        
 
         width, height = pil_img.size
         if timestamp:
