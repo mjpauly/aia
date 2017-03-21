@@ -83,6 +83,15 @@ def process_med_int(fle):
         return med_int / exp_time
 
 
+def no_images(fles):
+        """Helper function to determine if no good images exist in a query
+        """
+        out = len(fles) == 0
+        out = out or fles[0] == ''
+        out = out or getFitsHdr(fles[0])['quality'] != 0
+        return out
+
+
 def process_wave(wave):
         """Gets the median intensities for a wavelength, the filtered regression,
         and all the paths.
@@ -99,7 +108,7 @@ def process_wave(wave):
         for date in datetime_list:
                 fles = fetch(date, date + timedelta(minutes=1), wave)
                 missing_data = False
-                while (len(fles) == 0) or (getFitsHdr(fles[0])['quality'] != 0):
+                while no_images(fles):
                         date += timedelta(minutes=15)
                         fles = fetch(date, date + timedelta(minutes=1), wave)
                         if date.hour >= 6:

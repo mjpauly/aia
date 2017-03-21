@@ -32,7 +32,7 @@ MINMAX = {'131': (7, 1200),'171': (10, 6000),'193': (120, 6000),
 
 def process_img(fits_file, fname=None, downscale=None,
                 rescale_brightness=True, side_by_side=False,
-                timestamp=True):
+                timestamp=True, single_channel=False):
         """Produces a png image of the Sun from a fits file
 
         fits_file: name of fits file to process
@@ -49,6 +49,8 @@ def process_img(fits_file, fname=None, downscale=None,
         and not brightness scaled images
 
         timestamp: show timestamp or not
+        
+        single_channel: return np array without colormap/bytescale/timestamp
         """
         hdr = sun_intensity.getFitsHdr(fits_file)
         wavelength = str(hdr['wavelnth'])
@@ -80,6 +82,8 @@ def process_img(fits_file, fname=None, downscale=None,
                 data = np.sqrt(np.clip(data, imin, imax))
         else:
                 norm = colors.LogNorm(vmin=imin, vmax=imax, clip=True)
+        if single_channel:
+                return norm(data)
         pil_img = misc.toimage(cmap(norm(data)))
 
         width, height = pil_img.size
@@ -109,7 +113,8 @@ def process_img(fits_file, fname=None, downscale=None,
 
 
 def process_hmi(fits_file, rsun_obs, cdelt, fname=None,
-                downscale=None, timestamp=True, cmap='PiYG'):
+                downscale=None, timestamp=True, cmap='hmimag',
+                single_channel=False):
         """Produces a png image of the Sun from a fits file
 
         fits_file: name of fits file to process
@@ -126,16 +131,16 @@ def process_hmi(fits_file, rsun_obs, cdelt, fname=None,
         themap = Map(fits_file)
         data = themap.data
         data = np.flipud(data)
-        r_pix = (rsun_obs / cdelt) - 10
+        r_pix = rsun_obs / cdelt # can subtract from this val to clip edge
         mask = sun_intensity.get_disk_mask(data.shape, r_pix)
         data[mask] = 0 # off disk pixel value. can be different
         if downscale:
                 data = downscale_local_mean(data, downscale)
 
         norm = colors.SymLogNorm(1, clip=True) # what norm to try?
-        # cmap = get_cmap('hmimag') # can try Greys or Greys_r
         cmap = get_cmap(cmap) # can try Greys or Greys_r
-        # cmap.set_bad()
+        if single_channel:
+            return norm(data)
         pil_img = misc.toimage(cmap(norm(data)))
 
         width, height = pil_img.size
