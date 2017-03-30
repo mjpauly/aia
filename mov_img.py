@@ -164,10 +164,8 @@ def make_movie(fits_list, movname='outfile.mov', framerate=60, **kwargs):
         """Produces a movie from the list of fits files provided
         **kwargs pases args for each frame to mov_img
         """
-        if not os.path.exists('/tmp/'):
-                os.mkdir('/tmp/')
         if not os.path.exists('/tmp/aia_movie/'):
-                os.mkdir('/tmp/aia_movie/')
+                os.makedirs('/tmp/aia_movie/')
         for i, fits_file in enumerate(fits_list):
                 process_img(fits_file,
                             fname='/tmp/aia_movie/{:05d}.jpg'.format(i),
