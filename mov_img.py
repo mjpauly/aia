@@ -32,25 +32,30 @@ MINMAX = {'131': (7, 1200),'171': (10, 6000),'193': (120, 6000),
 
 def process_img(fits_file, fname=None, downscale=None,
                 rescale_brightness=True, side_by_side=False,
-                timestamp=True, single_channel=False):
+                timestamp=True, single_channel=False, 
+                suppress_aia_prep=False, custom_f=lambda x: x):
         """Produces a png image of the Sun from a fits file
 
-        fits_file: name of fits file to process
+        fits_file (str): name of fits file to process
 
-        fname: determines whether to save the image directly
+        fname (str): determines whether to save the image directly
         or to return a pil image
 
-        downscale: if filled, it downscales the data by (x, y) factor.
+        downscale (tuple): if filled, it downscales the data by (x, y) factor.
         E.g. (8,8)
 
-        rescale_brightness: determines if brightness correction is done.
+        rescale_brightness (bool): determines if brightness correction is done.
 
-        side_by_side: make a side-by-side comparison of the scaled
+        side_by_side (bool): make a side-by-side comparison of the scaled
         and not brightness scaled images
 
-        timestamp: show timestamp or not
+        timestamp (bool): show timestamp or not
         
-        single_channel: return np array without colormap/bytescale/timestamp
+        single_channel (bool): return np array without colormap/bytescale/timestamp
+
+        suppress_aia_prep (bool): not do aia prep if image below lvl 1
+
+        custom_f (function): custom function applied to data array
         """
         hdr = sun_intensity.getFitsHdr(fits_file)
         wavelength = str(hdr['wavelnth'])
@@ -60,10 +65,11 @@ def process_img(fits_file, fname=None, downscale=None,
         imin, imax = MINMAX[wavelength]
 
         themap = Map(fits_file)
-        if hdr['lvl_num'] != 1.5:
+        if (hdr['lvl_num'] != 1.5) and (not suppress_aia_prep):
                 # perform aiaprep if data not at level 1.5
                 themap = aiaprep(themap)
         data = themap.data / exptime #  normalize for exposure
+        data = custom_f(data) # apply custom function data
         norm_scale = STANDARD_INT[wavelength]
         dim_factor = sun_intensity.get_dim_factor(themap.date, wavelength)
         data = data * norm_scale
