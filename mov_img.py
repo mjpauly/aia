@@ -34,149 +34,149 @@ def process_img(fits_file, fname=None, downscale=None,
                 rescale_brightness=True, side_by_side=False,
                 timestamp=True, single_channel=False, 
                 suppress_aia_prep=False, custom_f=lambda x: x):
-        """Produces a png image of the Sun from a fits file
+    """Produces a png image of the Sun from a fits file
 
-        fits_file (str): name of fits file to process
+    fits_file (str): name of fits file to process
 
-        fname (str): determines whether to save the image directly
-        or to return a pil image
+    fname (str): determines whether to save the image directly
+    or to return a pil image
 
-        downscale (tuple): if filled, it downscales the data by (x, y) factor.
-        E.g. (8,8)
+    downscale (tuple): if filled, it downscales the data by (x, y) factor.
+    E.g. (8,8)
 
-        rescale_brightness (bool): determines if brightness correction is done.
+    rescale_brightness (bool): determines if brightness correction is done.
 
-        side_by_side (bool): make a side-by-side comparison of the scaled
-        and not brightness scaled images
+    side_by_side (bool): make a side-by-side comparison of the scaled
+    and not brightness scaled images
 
-        timestamp (bool): show timestamp or not
-        
-        single_channel (bool): return np array without colormap/bytescale/timestamp
+    timestamp (bool): show timestamp or not
+    
+    single_channel (bool): return np array without colormap/bytescale/timestamp
 
-        suppress_aia_prep (bool): not do aia prep if image below lvl 1
+    suppress_aia_prep (bool): not do aia prep if image below lvl 1
 
-        custom_f (function): custom function applied to data array
-        """
-        hdr = sun_intensity.getFitsHdr(fits_file)
-        wavelength = str(hdr['wavelnth'])
-        exptime = hdr['EXPTIME']
-        cmap = get_cmap('sdoaia' + wavelength)
-        cmap.set_bad()
-        imin, imax = MINMAX[wavelength]
+    custom_f (function): custom function applied to data array
+    """
+    hdr = sun_intensity.getFitsHdr(fits_file)
+    wavelength = str(hdr['wavelnth'])
+    exptime = hdr['EXPTIME']
+    cmap = get_cmap('sdoaia' + wavelength)
+    cmap.set_bad()
+    imin, imax = MINMAX[wavelength]
 
-        themap = Map(fits_file)
-        if (hdr['lvl_num'] != 1.5) and (not suppress_aia_prep):
-                # perform aiaprep if data not at level 1.5
-                themap = aiaprep(themap)
-        data = themap.data / exptime #  normalize for exposure
-        data = custom_f(data) # apply custom function data
-        norm_scale = STANDARD_INT[wavelength]
-        dim_factor = sun_intensity.get_dim_factor(themap.date, wavelength)
-        data = data * norm_scale
-        data = np.flipud(data)
-        if downscale:
-                data = downscale_local_mean(data, downscale)
+    themap = Map(fits_file)
+    if (hdr['lvl_num'] != 1.5) and (not suppress_aia_prep):
+        # perform aiaprep if data not at level 1.5
+        themap = aiaprep(themap)
+    data = themap.data / exptime #  normalize for exposure
+    data = custom_f(data) # apply custom function data
+    norm_scale = STANDARD_INT[wavelength]
+    dim_factor = sun_intensity.get_dim_factor(themap.date, wavelength)
+    data = data * norm_scale
+    data = np.flipud(data)
+    if downscale:
+        data = downscale_local_mean(data, downscale)
 
-        if rescale_brightness or side_by_side:
-                imin = imin / dim_factor # brightness correction
-                imax = imax / dim_factor
-        data[0,0] = imin # first pixel set to min
-        data[0,1] = imax # second pixel sit to max
+    if rescale_brightness or side_by_side:
+        imin = imin / dim_factor # brightness correction
+        imax = imax / dim_factor
+    data[0,0] = imin # first pixel set to min
+    data[0,1] = imax # second pixel sit to max
 
-        if SQRT_NORM[wavelength]:
-                norm = colors.PowerNorm(1)
-                data = np.sqrt(np.clip(data, imin, imax))
-        else:
-                norm = colors.LogNorm(vmin=imin, vmax=imax, clip=True)
-        if single_channel:
-                return norm(data)
-        pil_img = misc.toimage(cmap(norm(data)))
+    if SQRT_NORM[wavelength]:
+        norm = colors.PowerNorm(1)
+        data = np.sqrt(np.clip(data, imin, imax))
+    else:
+        norm = colors.LogNorm(vmin=imin, vmax=imax, clip=True)
+    if single_channel:
+        return norm(data)
+    pil_img = misc.toimage(cmap(norm(data)))
 
-        width, height = pil_img.size
-        if side_by_side:
-                new_img = Image.new('RGB', (width * 2, height))
-                new_img.paste(pil_img, (0, 0))
-                second_image = process_img(fits_file, downscale=downscale,
-                                           rescale_brightness=False,
-                                           timestamp=False)
-                new_img.paste(second_image, (width, 0))
-                pil_img = new_img
+    width, height = pil_img.size
+    if side_by_side:
+        new_img = Image.new('RGB', (width * 2, height))
+        new_img.paste(pil_img, (0, 0))
+        second_image = process_img(fits_file, downscale=downscale,
+                                   rescale_brightness=False,
+                                   timestamp=False)
+        new_img.paste(second_image, (width, 0))
+        pil_img = new_img
 
-        if timestamp:
-                draw = ImageDraw.Draw(pil_img)
-                font_height = int(height / 64)
-                font = ImageFont.truetype('/Library/Fonts/Arial.ttf',
-                                          font_height)
-                draw.text((font_height, height - (2 * font_height)),
-                          'SDO/AIA- ' + wavelength + ' ' +
-                          themap.date.strftime('%Y-%m-%d %H:%M:%S'),
-                          font=font)
+    if timestamp:
+        draw = ImageDraw.Draw(pil_img)
+        font_height = int(height / 64)
+        font = ImageFont.truetype('/Library/Fonts/Arial.ttf',
+                                  font_height)
+        draw.text((font_height, height - (2 * font_height)),
+                  'SDO/AIA- ' + wavelength + ' ' +
+                  themap.date.strftime('%Y-%m-%d %H:%M:%S'),
+                  font=font)
 
-        if fname:
-                pil_img.save(fname)
-        else:
-                return pil_img
+    if fname:
+        pil_img.save(fname)
+    else:
+        return pil_img
 
 
 def process_hmi(fits_file, rsun_obs, cdelt, fname=None,
                 downscale=None, timestamp=True, cmap='hmimag',
                 single_channel=False):
-        """Produces a png image of the Sun from a fits file
+    """Produces a png image of the Sun from a fits file
 
-        fits_file: name of fits file to process
+    fits_file: name of fits file to process
 
-        fname: determines whether to save the image directly
-        or to return a pil image
+    fname: determines whether to save the image directly
+    or to return a pil image
 
-        downscale: if filled, it downscales the data by (x, y) factor.
-        E.g. (8,8)
+    downscale: if filled, it downscales the data by (x, y) factor.
+    E.g. (8,8)
 
-        timestamp: show timestamp or not
-        """
-        hdr = sun_intensity.getFitsHdr(fits_file)
-        themap = Map(fits_file)
-        data = themap.data
-        data = np.flipud(data)
-        r_pix = rsun_obs / cdelt # can subtract from this val to clip edge
-        mask = sun_intensity.get_disk_mask(data.shape, r_pix)
-        data[mask] = 0 # off disk pixel value. can be different
-        if downscale:
-                data = downscale_local_mean(data, downscale)
+    timestamp: show timestamp or not
+    """
+    hdr = sun_intensity.getFitsHdr(fits_file)
+    themap = Map(fits_file)
+    data = themap.data
+    data = np.flipud(data)
+    r_pix = rsun_obs / cdelt # can subtract from this val to clip edge
+    mask = sun_intensity.get_disk_mask(data.shape, r_pix)
+    data[mask] = 0 # off disk pixel value. can be different
+    if downscale:
+        data = downscale_local_mean(data, downscale)
 
-        norm = colors.SymLogNorm(1, clip=True) # what norm to try?
-        cmap = get_cmap(cmap) # can try Greys or Greys_r
-        if single_channel:
-            return norm(data)
-        pil_img = misc.toimage(cmap(norm(data)))
+    norm = colors.SymLogNorm(1, clip=True) # what norm to try?
+    cmap = get_cmap(cmap) # can try Greys or Greys_r
+    if single_channel:
+        return norm(data)
+    pil_img = misc.toimage(cmap(norm(data)))
 
-        width, height = pil_img.size
-        if timestamp:
-                draw = ImageDraw.Draw(pil_img)
-                font_height = int(height / 64)
-                font = ImageFont.truetype('/Library/Fonts/Arial.ttf',
-                                          font_height)
-                draw.text((font_height, height - (2 * font_height)),
-                          'SDO/HMI- Magnetogram' +
-                          themap.date.strftime('%Y-%m-%d %H:%M:%S'),
-                          font=font)
+    width, height = pil_img.size
+    if timestamp:
+        draw = ImageDraw.Draw(pil_img)
+        font_height = int(height / 64)
+        font = ImageFont.truetype('/Library/Fonts/Arial.ttf',
+                                  font_height)
+        draw.text((font_height, height - (2 * font_height)),
+                  'SDO/HMI- Magnetogram' +
+                  themap.date.strftime('%Y-%m-%d %H:%M:%S'),
+                  font=font)
 
-        if fname:
-                pil_img.save(fname)
-        else:
-                return pil_img
+    if fname:
+        pil_img.save(fname)
+    else:
+        return pil_img
 
 
 def make_movie(fits_list, movname='outfile.mov', framerate=60, **kwargs):
-        """Produces a movie from the list of fits files provided
-        **kwargs pases args for each frame to mov_img
-        """
-        if not os.path.exists('/tmp/aia_movie/'):
-                os.makedirs('/tmp/aia_movie/')
-        for i, fits_file in enumerate(fits_list):
-                process_img(fits_file,
-                            fname='/tmp/aia_movie/{:05d}.jpg'.format(i),
-                            **kwargs)
-        pop = Popen(['ffmpeg', '-y', '-framerate', str(framerate), '-i',
-                     '/tmp/aia_movie/%05d.jpg', movname])
-        pop.wait()
-        rmtree('/tmp/aia_movie/')
+    """Produces a movie from the list of fits files provided
+    **kwargs pases args for each frame to mov_img
+    """
+    if not os.path.exists('/tmp/aia_movie/'):
+        os.makedirs('/tmp/aia_movie/')
+    for i, fits_file in enumerate(fits_list):
+        process_img(fits_file,
+                    fname='/tmp/aia_movie/{:05d}.jpg'.format(i),
+                    **kwargs)
+    pop = Popen(['ffmpeg', '-y', '-framerate', str(framerate), '-i',
+             '/tmp/aia_movie/%05d.jpg', movname])
+    pop.wait()
+    rmtree('/tmp/aia_movie/')
