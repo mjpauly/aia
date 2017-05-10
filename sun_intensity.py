@@ -150,6 +150,22 @@ def main(compute_regression=True):
     return df
 
 
+def main_no_mp(compute_regression=True):
+    """Gets all the sun intensities for all wavelengths.
+    Does not use multiprocessing to aid in bug fixing
+    """
+    csv_dict = {}
+    for wave in wavelengths:
+        r = process_wave(wave)
+        csv_dict[wave + '_paths'] = r[1]
+        csv_dict[wave + '_raw'] = r[2]
+        if compute_regression:
+            csv_dict[wave + '_filtered'] = pd.Series(
+                savgol_filter(r[2], 301, 2), index=date_list)
+    df = pd.DataFrame(csv_dict)
+    return df
+
+
 def update_csv():
     """Updates the csv
     """
