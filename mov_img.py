@@ -34,28 +34,32 @@ def process_img(fits_file, fname=None, downscale=None,
                 rescale_brightness=True, side_by_side=False,
                 timestamp=True, single_channel=False, 
                 suppress_aia_prep=False, custom_f=lambda x: x):
-    """Produces a png image of the Sun from a fits file
+    """Produces an AIA image of the Sun from a fits file
 
-    fits_file (str): name of fits file to process
-
-    fname (str): determines whether to save the image directly
-    or to return a pil image
-
-    downscale (tuple): if filled, it downscales the data by (x, y) factor.
-    E.g. (8,8)
-
-    rescale_brightness (bool): determines if brightness correction is done.
-
-    side_by_side (bool): make a side-by-side comparison of the scaled
-    and not brightness scaled images
-
-    timestamp (bool): show timestamp or not
-    
-    single_channel (bool): return np array without colormap/bytescale/timestamp
-
-    suppress_aia_prep (bool): not do aia prep if image below lvl 1
-
-    custom_f (function): custom function applied to data array
+    Parameters
+    ----------
+    fits_file: str (Eg 'dir/image482005.fits')
+        name of fits file to process
+    fname : str (Eg 'dir/out_img.jpg')
+        file name to save image as
+        If None:
+            returns a PIL image instance instead of saving directly
+    downscale: tuple of two ints (Eg: (8, 8))
+        downscales the data by (x, y) factor if filled
+    rescale_brightness: bool
+        determines if brightness correction is done
+    side_by_side: bool
+        make a side-by-side comparison of the scaled and not
+        brightness scaled images
+    timestamp: bool
+        show timestamp or not
+    single_channel: bool
+        return image data in np array before applying the colormap
+    suppress_aia_prep: bool
+        not do aia prep if image below lvl 1
+    custom_f: function
+        custom function applied to data array
+        applied early on, just after aiaprep
     """
     hdr = sun_intensity.getFitsHdr(fits_file)
     wavelength = str(hdr['wavelnth'])
@@ -68,12 +72,13 @@ def process_img(fits_file, fname=None, downscale=None,
     if (hdr['lvl_num'] != 1.5) and (not suppress_aia_prep):
         # perform aiaprep if data not at level 1.5
         themap = aiaprep(themap)
-    data = themap.data / exptime #  normalize for exposure
+    data = themap.data
+    data = np.flipud(data)
     data = custom_f(data) # apply custom function data
+    data = data / exptime #  normalize for exposure
     norm_scale = STANDARD_INT[wavelength]
     dim_factor = sun_intensity.get_dim_factor(themap.date, wavelength)
     data = data * norm_scale
-    data = np.flipud(data)
     if downscale:
         data = downscale_local_mean(data, downscale)
 
@@ -120,22 +125,37 @@ def process_img(fits_file, fname=None, downscale=None,
 
 def process_hmi(fits_file, rsun_obs, cdelt, fname=None,
                 downscale=None, timestamp=True, cmap='hmimag',
-                single_channel=False):
-    """Produces a png image of the Sun from a fits file
+                single_channel=False, custom_f=lambda x: x):
+    """Produces a HMI image of the Sun from a fits file
 
-    fits_file: name of fits file to process
-
-    fname: determines whether to save the image directly
-    or to return a pil image
-
-    downscale: if filled, it downscales the data by (x, y) factor.
-    E.g. (8,8)
-
-    timestamp: show timestamp or not
+    Parameters
+    ----------
+    fits_file: str (Eg 'dir/image482005.fits')
+        name of fits file to process
+    rsun_obs: float
+        the rsun_obs keyword
+    cdelt: float
+        the cdelt keyword
+    fname : str (Eg 'dir/out_img.jpg')
+        file name to save image as
+        If None:
+    downscale: tuple of two ints (Eg: (8, 8))
+        downscales the data by (x, y) factor if filled
+    timestamp: bool
+        show timestamp or not
+    cmap: str (Eg: 'Greys_r')
+        colormap to use
+        sunpy colormaps available to choose from
+    single_channel: bool
+        return image data in np array before applying the colormap
+    custom_f: function
+        custom function applied to data array
+        applied early on, just after aiaprep
     """
     hdr = sun_intensity.getFitsHdr(fits_file)
     themap = Map(fits_file)
     data = themap.data
+    data = custom_f(data) # apply custom function data
     data = np.flipud(data)
     r_pix = rsun_obs / cdelt # can subtract from this val to clip edge
     mask = sun_intensity.get_disk_mask(data.shape, r_pix)
@@ -168,7 +188,7 @@ def process_hmi(fits_file, rsun_obs, cdelt, fname=None,
 
 def make_movie(fits_list, movname='outfile.mov', framerate=60, **kwargs):
     """Produces a movie from the list of fits files provided
-    **kwargs pases args for each frame to mov_img
+    **kwargs passes args for each frame to mov_img
     """
     if not os.path.exists('/tmp/aia_movie/'):
         os.makedirs('/tmp/aia_movie/')
