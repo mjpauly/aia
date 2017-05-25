@@ -1,4 +1,5 @@
-"""image producing routine for AIA
+"""
+Image producing routine for AIA
 """
 
 from datetime import datetime

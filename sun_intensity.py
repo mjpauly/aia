@@ -23,6 +23,16 @@ wavelengths = ['131','171','193','211','304','335','94']
 
 
 def create_date_series(tstart):
+    """
+    Produce a list of dates each 1 day apart.
+    
+    Args:
+        tstart (datetime or tuple): date to start series at
+    
+    Returns:
+        list of dates
+    
+    """
     if isinstance(tstart, tuple):
         dt = datetime(*tstart)
     else:
@@ -43,7 +53,15 @@ date_list = [str(date.date()) for date in datetime_list]
 
 
 def getFitsHdr(fle):
-    """get the header for a fits file
+    """
+    Get the header for a fits file
+    
+    Args:
+        fle (str): the file name
+
+    Returns:
+        file header (dict)
+
     """
     f = fits.open(fle)
     hdr = f[-1].header
@@ -52,7 +70,16 @@ def getFitsHdr(fle):
 
 
 def get_disk_mask(data_shape, r_pix):
-    """returns the array mask for only the disk of the Sun
+    """
+    Returns the array mask for only the disk of the Sun
+
+    Args:
+        data_shape (tuple): shape of image data
+        r_pix (float): radius of the sun in pixels
+
+    Returns:
+        numpy mask array which masks out the pixels off the disk of the sun
+
     """
     # x, y = np.meshgrid(*map(np.arange, data.shape), indexing='ij')
     # return (np.sqrt((x - 2047.5)**2 + (y - 2047.5)**2) > r_pix)
@@ -64,8 +91,16 @@ def get_disk_mask(data_shape, r_pix):
 
 
 def process_med_int(fle):
-    """Processes 1 image and extracts the median intensity on the disk
+    """
+    Processes 1 image and extracts the median intensity on the disk
     normalized for exposure time.
+
+    Args:
+        fle (str): image file name
+
+    Returns:
+        median intensity of the solar disk normalized for exptime
+
     """
     amap = Map(fle)
     amap = aiaprep(amap)
@@ -84,7 +119,15 @@ def process_med_int(fle):
 
 
 def no_images(fles):
-    """Helper function to determine if no good images exist in a query
+    """
+    Determines if no good images exist in a query
+
+    Args:
+        fles (list of strs): file names
+
+    Returns:
+        True of no images exist in a query with a quality of zero
+
     """
     out = len(fles) == 0
     out = out or fles[0] == ''
@@ -93,15 +136,22 @@ def no_images(fles):
 
 
 def process_wave(wave):
-    """Gets the median intensities for a wavelength, the filtered regression,
-    and all the paths.
+    """
+    Gets the median intensities for a wavelength, and the file paths
 
     If no *good* data is found in first 6 hours of day at 15 minutes steps,
     then the value is replaced with NaN in the series.
     Good images are those that have a "quality" rating of 0
 
-    At the end, all NaNs are filled with the last known value
+    At the end, all NaNs are filled with the last known value until then
     Unkown values in the beginning are filled from the next known value
+
+    Args:
+        wave (str): wave to process
+
+    Returns:
+        list containing the wave str, list of filenames, and intensities
+
     """
     paths = pd.Series(index=date_list)
     raw = pd.Series(index=date_list)
@@ -126,16 +176,19 @@ def process_wave(wave):
     raw = raw.ffill()
     raw = raw.bfill()
     return [wave, paths, raw]
-    """
-    except:
-        with open('/Users/pauly/Desktop/{}.pkl'.format(wave), 'wb') as f:
-            pickle.dump([wave, paths, raw])
-    """
 
 
 def main(compute_regression=True):
-    """Gets all the sun intensities for all wavelengths.
+    """
+    Gets all the sun intensities for all wavelengths.
     Uses multiprocessing.
+
+    Args:
+        compute_regression (bool): compute savgol regression now or later
+
+    Returns:
+        pandas dataframe containing the data
+
     """
     csv_dict = {}
     with mp.Pool(processes=12) as pool:
@@ -151,8 +204,17 @@ def main(compute_regression=True):
 
 
 def main_no_mp(compute_regression=True):
-    """Gets all the sun intensities for all wavelengths.
-    Does not use multiprocessing to aid in bug fixing
+    """
+    Gets all the sun intensities for all wavelengths.
+    Does not use multiprocessing to aid in bug fixing.
+    (traceback often messed up with multiprocessing)
+
+    Args:
+        compute_regression (bool): compute savgol regression now or later
+
+    Returns:
+        Pandas dataframe containing the data
+        
     """
     csv_dict = {}
     for wave in wavelengths:
@@ -167,7 +229,12 @@ def main_no_mp(compute_regression=True):
 
 
 def update_csv():
-    """Updates the csv
+    """
+    Updates the csv data.
+    Looks of csv file in current directory.
+
+    Returns:
+        Pandas dataframe containing the data
     """
     if os.path.exists(csv_path):
         df = open_csv()
@@ -191,13 +258,18 @@ def update_csv():
 
 
 def get_dim_factor(date, wave):
-    """Gets the intensity scale factor for a day
-    Unlike before, this outputs the scale factor an image's data
+    """
+    Gets the intensity scale factor for a day
+    This outputs the scale factor an image's data
     should be multiplied by. Not the actual intensity.
 
-    date: datetime object or date string
-    Datetime objects are truncated to the current day.
-    wave: string denoting the wavelength (eg '171')
+    Args:
+        date (datetime or str): datetime objects are truncated 
+                                to the current day.
+        wave (str): the wavelength
+
+    Returns:
+        scale factor (float)
     """
     df = open_csv()
     if not isinstance(date, str):
@@ -214,7 +286,11 @@ def get_dim_factor(date, wave):
 
 
 def get_today_factors():
-    """Outputs a dictionary containing today's dim factors
+    """
+    Outputs a dictionary containing today's dim factors
+
+    Returns:
+        dict of of scale factors (keys are wavelengths)
     """
     factors = {}
     date = datetime.utcnow()
@@ -224,9 +300,13 @@ def get_today_factors():
 
 
 def make_movies(out_dir='movies/'):
-    """Uses mov_img to make a 5-second, 60-fps video of each channels's
+    """
+    Uses mov_img to make a 5-second, 60-fps video of each channels's
     brightness throughout the mission with comparison between corrected
     and uncorrected images.
+
+    Args:
+        out_dir (str): ouput location
 
     """
     df = open_csv()
@@ -242,12 +322,23 @@ def make_movies(out_dir='movies/'):
 
 
 def open_csv():
+    """
+    Opens the aia_rescaling_data.csv file
+
+    Returns:
+        Pandas dataframe with data
+
+    """
     if not os.path.exists(csv_path):
         raise FileNotFoundError('Cannot find AIA data CSV file.')
     return pd.read_csv(csv_path, index_col=0)
 
 
 if __name__ == '__main__':
+    """
+    Update the data if this module is run directly
+
+    """
     df = update_csv()
     df.to_csv(csv_path)
     # remove unnecessary columns for json file creation
