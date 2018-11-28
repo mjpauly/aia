@@ -7,7 +7,7 @@ The purpose of this exercise is to produce aesthetically pleasing mission long m
 The `sun_intensity` module the brightness of AIA images in order to normalize them to the standard brightness from the beginning of the mission. The 304 AA images from AIA have been the most greatly affected by changes in brightness, decreasing to less than a twelfth of their original brightness at the beginning of the mission.
 
 <center>
-![304 brightness plot](/304_plot.jpg?raw=true)
+![304 brightness plot](https://raw.githubusercontent.com/mjpauly/aia/master/304_plot.jpg)
 </center>
 
 The sun_intensity.py module contains all the code necessary for collecting and processing the original data, however this is rather computationally expensive and will take some time. That code is here mostly to show how the values are obtained. The best way to get the normalization values is to use the get_dim_factor function in the sun_intensity.py module. I recommend cloning this repository and using `imp` to import the module into your program.
